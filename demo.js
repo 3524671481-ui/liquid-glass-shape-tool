@@ -57,6 +57,7 @@ window.addEventListener('resize', () => {
             if (!instance.gl_refs || !instance.gl_refs.gl) return
 
             const gl = instance.gl_refs.gl
+            gl.activeTexture(gl.TEXTURE0)
             gl.bindTexture(gl.TEXTURE_2D, instance.gl_refs.texture)
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
             gl.uniform2f(instance.gl_refs.textureSizeLoc, img.width, img.height)

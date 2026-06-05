@@ -14,7 +14,8 @@ class Button extends Container {
       borderRadius: size / 2,
       type: type,
       tintOpacity: tintOpacity,
-      customPoints: options.customPoints || []
+      customPoints: options.customPoints || [],
+      maskImage: options.maskImage || null
     })
 
     this.text = text

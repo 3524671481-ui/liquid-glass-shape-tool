@@ -12,6 +12,8 @@ class Container {
     this.shapeType = Container.getShapeType(this.type)
     this.tintOpacity = options.tintOpacity !== undefined ? options.tintOpacity : 0.2
     this.customPoints = options.customPoints || []
+    this.maskImage = options.maskImage || null
+    this.useMaskTexture = !!options.maskImage
 
     this.canvas = null
     this.element = null
@@ -53,6 +55,27 @@ class Container {
     })
 
     return packedPoints
+  }
+
+  setMaskImage(dataUrl) {
+    this.maskImage = dataUrl
+    this.useMaskTexture = true
+
+    const image = new Image()
+    image.onload = () => {
+      if (this.gl_refs.gl && this.gl_refs.maskTexture) {
+        const gl = this.gl_refs.gl
+        gl.activeTexture(gl.TEXTURE1)
+        gl.bindTexture(gl.TEXTURE_2D, this.gl_refs.maskTexture)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+        if (this.gl_refs.useMaskTextureLoc) {
+          gl.uniform1f(this.gl_refs.useMaskTextureLoc, 1.0)
+        }
+        gl.activeTexture(gl.TEXTURE0)
+        if (this.render) this.render()
+      }
+    }
+    image.src = dataUrl
   }
 
   addChild(child) {
@@ -296,6 +319,7 @@ class Container {
     const fsSource = `
     precision mediump float;
     uniform sampler2D u_image;
+    uniform sampler2D u_mask;
     uniform vec2 u_resolution;
       uniform vec2 u_textureSize;
       uniform float u_scrollY;
@@ -317,6 +341,7 @@ class Container {
       uniform float u_cornerBoost;
       uniform float u_rippleEffect;
       uniform float u_tintOpacity;
+      uniform float u_useMaskTexture;
     varying vec2 v_texcoord;
 
       // Function to calculate distance from rounded rectangle edge
@@ -487,8 +512,13 @@ class Container {
         // Glass refraction effects
         float distFromEdgeShape;
         vec2 shapeNormal; // Normal vector pointing away from shape surface
+        float maskTextureAlpha = texture2D(u_mask, coord).a;
         
-        if (u_shapeType > 1.5 && u_shapeType < 2.5) {
+        if (u_useMaskTexture > 0.5) {
+          distFromEdgeShape = maskTextureAlpha * min(u_resolution.x, u_resolution.y);
+          vec2 center = vec2(0.5, 0.5);
+          shapeNormal = normalize(coord - center);
+        } else if (u_shapeType > 1.5 && u_shapeType < 2.5) {
           distFromEdgeShape = -pillDistance(coord, u_resolution, u_borderRadius);
           
           // Calculate normal for pill shape
@@ -630,10 +660,11 @@ class Container {
         vec3 finalTinted = mix(color.rgb, sampledGradient, u_tintOpacity * 0.3);
         color = vec4(finalTinted, color.a);
         
-        // Shape mask (rounded rectangle, circle, or pill)
+        // Shape mask
         float maskDistance;
         maskDistance = shapeDistance(coord, u_resolution, u_borderRadius, u_shapeType);
-        float mask = 1.0 - smoothstep(-1.0, 1.0, maskDistance);
+        float shapeMask = 1.0 - smoothstep(-1.0, 1.0, maskDistance);
+        float mask = u_useMaskTexture > 0.5 ? maskTextureAlpha : shapeMask;
         
         gl_FragColor = vec4(color.rgb * mask, mask);
       }
@@ -677,7 +708,9 @@ class Container {
     const cornerBoostLoc = gl.getUniformLocation(program, 'u_cornerBoost')
     const rippleEffectLoc = gl.getUniformLocation(program, 'u_rippleEffect')
     const tintOpacityLoc = gl.getUniformLocation(program, 'u_tintOpacity')
+    const useMaskTextureLoc = gl.getUniformLocation(program, 'u_useMaskTexture')
     const imageLoc = gl.getUniformLocation(program, 'u_image')
+    const maskLoc = gl.getUniformLocation(program, 'u_mask')
 
     // Create texture
     const texture = gl.createTexture()
@@ -688,10 +721,19 @@ class Container {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
+    const maskTexture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, maskTexture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]))
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
     // Store references
     this.gl_refs = {
       gl,
       texture,
+      maskTexture,
       textureSizeLoc,
       scrollYLoc,
       positionLoc,
@@ -715,7 +757,9 @@ class Container {
       cornerBoostLoc,
       rippleEffectLoc,
       tintOpacityLoc,
+      useMaskTextureLoc,
       imageLoc,
+      maskLoc,
       positionBuffer,
       texcoordBuffer
     }
@@ -750,6 +794,7 @@ class Container {
     gl.uniform1f(cornerBoostLoc, window.glassControls?.cornerBoost || 0.02)
     gl.uniform1f(rippleEffectLoc, window.glassControls?.rippleEffect || 0.1)
     gl.uniform1f(tintOpacityLoc, this.tintOpacity)
+    gl.uniform1f(useMaskTextureLoc, this.useMaskTexture ? 1.0 : 0.0)
 
     // Set initial position (will be updated in render loop)
     const position = this.getPosition()
@@ -763,6 +808,16 @@ class Container {
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, texture)
     gl.uniform1i(imageLoc, 0)
+
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, maskTexture)
+    gl.uniform1i(maskLoc, 1)
+
+    if (this.maskImage) {
+      this.setMaskImage(this.maskImage)
+    }
+
+    gl.activeTexture(gl.TEXTURE0)
 
     // Start rendering
     this.startRenderLoop()

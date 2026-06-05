@@ -130,7 +130,7 @@ function setupControlSliders() {
     if (shapeWidthValue) shapeWidthValue.textContent = width
     if (shapeHeightValue) shapeHeightValue.textContent = height
 
-    window.primaryShapeButton.setCustomPath(window.customPathPoints || window.primaryShapeButton.customPoints, width, height)
+    window.primaryShapeButton.setGeometrySize(width, height, 'custom')
   }
 
   if (shapeWidth) {
@@ -233,18 +233,11 @@ function setupSvgImport() {
     if (!file) return
 
     try {
-      const svgText = await file.text()
-      const points = extractSvgPathPoints(svgText)
-
-      if (points.length < 3) {
-        throw new Error('没有找到可用的闭合图形')
-      }
-
-      window.customPathPoints = points
-      updateImportedSvgButton(points)
+      const dataUrl = await readFileAsDataUrl(file)
+      updateImportedSvgButton(dataUrl)
 
       if (status) {
-        status.textContent = `已导入：${file.name}，提取 ${points.length} 个轮廓点。`
+        status.textContent = `已导入：${file.name}，正在使用 SVG 原始形状作为按钮遮罩。`
       }
     } catch (error) {
       if (status) {
@@ -255,84 +248,16 @@ function setupSvgImport() {
   })
 }
 
-function extractSvgPathPoints(svgText) {
-  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-  if (doc.querySelector('parsererror')) {
-    throw new Error('SVG 文件格式无效')
-  }
-
-  const svg = doc.querySelector('svg')
-  if (!svg) {
-    throw new Error('文件中没有 SVG 根节点')
-  }
-
-  const host = document.createElement('div')
-  host.style.position = 'fixed'
-  host.style.left = '-10000px'
-  host.style.top = '-10000px'
-  host.style.width = '0'
-  host.style.height = '0'
-  host.style.overflow = 'hidden'
-  host.appendChild(svg)
-  document.body.appendChild(host)
-
-  try {
-    const elements = [...svg.querySelectorAll('path, polygon, polyline, circle, ellipse, rect')]
-    const drawable = elements
-      .map(element => ({ element, length: getSvgElementLength(element) }))
-      .filter(item => item.length > 0)
-      .sort((a, b) => b.length - a.length)[0]
-
-    if (!drawable) {
-      throw new Error('只支持 path、polygon、polyline、circle、ellipse、rect 图形')
-    }
-
-    return normalizeSvgPoints(sampleSvgElement(drawable.element, drawable.length))
-  } finally {
-    document.body.removeChild(host)
-  }
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('无法读取 SVG 文件'))
+    reader.readAsDataURL(file)
+  })
 }
 
-function getSvgElementLength(element) {
-  if (typeof element.getTotalLength === 'function') {
-    try {
-      return element.getTotalLength()
-    } catch (error) {
-      return 0
-    }
-  }
-
-  return 0
-}
-
-function sampleSvgElement(element, length) {
-  const maxPoints = 32
-  const points = []
-
-  for (let i = 0; i < maxPoints; i++) {
-    const point = element.getPointAtLength((length * i) / maxPoints)
-    points.push({ x: point.x, y: point.y })
-  }
-
-  return points
-}
-
-function normalizeSvgPoints(points) {
-  const minX = Math.min(...points.map(point => point.x))
-  const maxX = Math.max(...points.map(point => point.x))
-  const minY = Math.min(...points.map(point => point.y))
-  const maxY = Math.max(...points.map(point => point.y))
-  const width = Math.max(maxX - minX, 1)
-  const height = Math.max(maxY - minY, 1)
-  const padding = 0.06
-
-  return points.map(point => ({
-    x: padding + ((point.x - minX) / width) * (1 - padding * 2),
-    y: padding + ((point.y - minY) / height) * (1 - padding * 2)
-  }))
-}
-
-function updateImportedSvgButton(points) {
+function updateImportedSvgButton(dataUrl) {
   if (!window.primaryShapeButton) return
 
   const shapeWidth = document.getElementById('shapeWidth')
@@ -340,7 +265,8 @@ function updateImportedSvgButton(points) {
   const width = shapeWidth ? parseInt(shapeWidth.value) : window.primaryShapeButton.width
   const height = shapeHeight ? parseInt(shapeHeight.value) : window.primaryShapeButton.height
 
-  window.primaryShapeButton.setCustomPath(points, width, height)
+  window.primaryShapeButton.setGeometrySize(width, height, 'custom')
+  window.primaryShapeButton.setMaskImage(dataUrl)
 }
 
 // Create glass container for controls panel
