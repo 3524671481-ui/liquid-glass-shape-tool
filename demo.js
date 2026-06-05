@@ -1,3 +1,5 @@
+setupDynamicBackground()
+
 window.shapeButtons = []
 
 const primaryShape = new Button({
@@ -12,6 +14,153 @@ window.shapeButtons.push(primaryShape)
 window.primaryShapeButton = primaryShape
 document.body.appendChild(primaryShape.element)
 setupInteractiveGlassButton(primaryShape)
+loadDefaultSvgShape()
+
+function setupDynamicBackground() {
+  const canvas = document.getElementById('fluid-background-canvas')
+  if (!canvas) return
+
+  const ctx = canvas.getContext('2d')
+  let media = null
+  let mediaType = null
+
+  window.dynamicBackgroundCanvas = canvas
+
+  function resizeCanvas() {
+    const ratio = window.devicePixelRatio || 1
+    canvas.width = Math.round(window.innerWidth * ratio)
+    canvas.height = Math.round(window.innerHeight * ratio)
+  }
+
+  function drawCover(source) {
+    const canvasRatio = canvas.width / canvas.height
+    const sourceWidth = source.videoWidth || source.naturalWidth || source.width
+    const sourceHeight = source.videoHeight || source.naturalHeight || source.height
+    const sourceRatio = sourceWidth / sourceHeight
+    let drawWidth = canvas.width
+    let drawHeight = canvas.height
+    let x = 0
+    let y = 0
+
+    if (sourceRatio > canvasRatio) {
+      drawWidth = canvas.height * sourceRatio
+      x = (canvas.width - drawWidth) / 2
+    } else {
+      drawHeight = canvas.width / sourceRatio
+      y = (canvas.height - drawHeight) / 2
+    }
+
+    ctx.drawImage(source, x, y, drawWidth, drawHeight)
+  }
+
+  function drawFluid(time) {
+    const width = canvas.width
+    const height = canvas.height
+    const t = time * 0.00018
+
+    ctx.clearRect(0, 0, width, height)
+
+    const base = ctx.createLinearGradient(0, 0, width, height)
+    base.addColorStop(0, '#02030a')
+    base.addColorStop(0.34, '#071632')
+    base.addColorStop(0.58, '#0b7dc0')
+    base.addColorStop(0.76, '#6a42cc')
+    base.addColorStop(1, '#f0603c')
+    ctx.fillStyle = base
+    ctx.fillRect(0, 0, width, height)
+
+    for (let i = 0; i < 4; i++) {
+      const cx = width * (0.12 + i * 0.24 + Math.sin(t * (1.4 + i * 0.2)) * 0.08)
+      const cy = height * (0.18 + i * 0.2 + Math.cos(t * (1.2 + i * 0.3)) * 0.12)
+      const radius = Math.max(width, height) * (0.34 - i * 0.035)
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+      const colors = ['rgba(0, 214, 255, 0.55)', 'rgba(90, 83, 255, 0.42)', 'rgba(255, 70, 170, 0.32)', 'rgba(255, 105, 45, 0.36)']
+      glow.addColorStop(0, colors[i])
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = glow
+      ctx.fillRect(0, 0, width, height)
+    }
+
+    ctx.save()
+    ctx.globalAlpha = 0.22
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.58)'
+    ctx.lineWidth = Math.max(1, width / 900)
+    for (let x = -width; x < width * 1.6; x += width / 70) {
+      ctx.beginPath()
+      for (let y = 0; y <= height; y += 18) {
+        const wave = Math.sin(y * 0.006 + t * 7) * width * 0.045
+        const px = x + y * 0.56 + wave
+        if (y === 0) ctx.moveTo(px, y)
+        else ctx.lineTo(px, y)
+      }
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    const grainCount = 420
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.34)'
+    for (let i = 0; i < grainCount; i++) {
+      const x = (Math.sin(i * 12.9898 + time * 0.00005) * 43758.5453) % 1
+      const y = (Math.sin(i * 78.233 + time * 0.00007) * 24634.6345) % 1
+      ctx.fillRect(Math.abs(x) * width, Math.abs(y) * height, 1, 1)
+    }
+  }
+
+  function frame(time) {
+    if (media && mediaType === 'image') {
+      drawCover(media)
+    } else if (media && mediaType === 'video' && media.readyState >= 2) {
+      drawCover(media)
+    } else {
+      drawFluid(time)
+    }
+    requestAnimationFrame(frame)
+  }
+
+  window.setBackgroundMediaFile = file => {
+    const url = URL.createObjectURL(file)
+    if (media && media.src?.startsWith('blob:')) URL.revokeObjectURL(media.src)
+
+    if (file.type.startsWith('video/')) {
+      media = document.createElement('video')
+      media.src = url
+      media.muted = true
+      media.loop = true
+      media.playsInline = true
+      media.autoplay = true
+      mediaType = 'video'
+      media.play().catch(() => {})
+    } else {
+      media = new Image()
+      media.src = url
+      mediaType = 'image'
+    }
+  }
+
+  resizeCanvas()
+  window.addEventListener('resize', resizeCanvas)
+  requestAnimationFrame(frame)
+}
+
+function loadDefaultSvgShape() {
+  const defaultSvgPath = '../../SVG/%E8%B5%84%E6%BA%90%203.svg'
+  const image = new Image()
+
+  image.onload = () => {
+    if (!window.rasterizeImageToMask || !window.primaryShapeButton) return
+
+    const mask = window.rasterizeImageToMask(image, image.naturalWidth / image.naturalHeight)
+    const size = Math.max(window.primaryShapeButton.width, window.primaryShapeButton.height)
+    const width = mask.aspect >= 1 ? size : Math.round(size * mask.aspect)
+    const height = mask.aspect >= 1 ? Math.round(size / mask.aspect) : size
+
+    window.primaryShapeButton.setGeometrySize(width, height, 'custom')
+    window.primaryShapeButton.setMaskImage(mask.dataUrl)
+  }
+
+  image.src = defaultSvgPath
+}
+
 
 function setupInteractiveGlassButton(button) {
   const element = button.element

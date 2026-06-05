@@ -114,6 +114,7 @@ function setupControlSliders() {
   }
 
   setupSvgImport()
+  setupBackgroundImport()
 
   // Set up randomize button
   const randomizeButton = document.getElementById('randomizeButton')
@@ -224,6 +225,18 @@ function setupSvgImport() {
   })
 }
 
+function setupBackgroundImport() {
+  const fileInput = document.getElementById('backgroundFileInput')
+  if (!fileInput) return
+
+  fileInput.addEventListener('change', event => {
+    const file = event.target.files?.[0]
+    if (file && window.setBackgroundMediaFile) {
+      window.setBackgroundMediaFile(file)
+    }
+  })
+}
+
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -252,24 +265,7 @@ function rasterizeSvgToMask(svgText) {
     image.onload = () => {
       URL.revokeObjectURL(objectUrl)
 
-      const canvas = document.createElement('canvas')
-      const maxTextureSize = 768
-      const aspect = svgSize.width / svgSize.height
-      const canvasWidth = aspect >= 1 ? maxTextureSize : Math.round(maxTextureSize * aspect)
-      const canvasHeight = aspect >= 1 ? Math.round(maxTextureSize / aspect) : maxTextureSize
-      canvas.width = canvasWidth
-      canvas.height = canvasHeight
-
-      const ctx = canvas.getContext('2d')
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-      ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight)
-
-      removeSolidSvgBackground(ctx, canvasWidth, canvasHeight)
-      encodeMaskDistanceField(ctx, canvasWidth, canvasHeight)
-      resolve({
-        dataUrl: canvas.toDataURL('image/png'),
-        aspect
-      })
+      resolve(rasterizeImageToMask(image, svgSize.width / svgSize.height))
     }
 
     image.onerror = () => {
@@ -280,6 +276,29 @@ function rasterizeSvgToMask(svgText) {
     image.src = objectUrl
   })
 }
+
+function rasterizeImageToMask(image, aspect) {
+  const canvas = document.createElement('canvas')
+  const maxTextureSize = 768
+  const canvasWidth = aspect >= 1 ? maxTextureSize : Math.round(maxTextureSize * aspect)
+  const canvasHeight = aspect >= 1 ? Math.round(maxTextureSize / aspect) : maxTextureSize
+  canvas.width = canvasWidth
+  canvas.height = canvasHeight
+
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+  ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight)
+
+  removeSolidSvgBackground(ctx, canvasWidth, canvasHeight)
+  encodeMaskDistanceField(ctx, canvasWidth, canvasHeight)
+
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    aspect
+  }
+}
+
+window.rasterizeImageToMask = rasterizeImageToMask
 
 function getSvgIntrinsicSize(svg) {
   const viewBox = svg.getAttribute('viewBox')

@@ -831,6 +831,17 @@ class Container {
       const gl = this.gl_refs.gl
       gl.clear(gl.COLOR_BUFFER_BIT)
 
+      if (window.dynamicBackgroundCanvas && this.gl_refs.texture) {
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, this.gl_refs.texture)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, window.dynamicBackgroundCanvas)
+        gl.uniform2f(
+          this.gl_refs.textureSizeLoc,
+          window.dynamicBackgroundCanvas.width,
+          window.dynamicBackgroundCanvas.height
+        )
+      }
+
       // Update scroll position
       const scrollY = window.pageYOffset || document.documentElement.scrollTop
       gl.uniform1f(this.gl_refs.scrollYLoc, scrollY)
@@ -842,10 +853,12 @@ class Container {
       gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
 
-    render()
+    const animationLoop = () => {
+      render()
+      requestAnimationFrame(animationLoop)
+    }
 
-    const handleScroll = () => render()
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    animationLoop()
 
     // Store render function for external calls
     this.render = render

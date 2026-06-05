@@ -59,6 +59,7 @@
     <link rel="stylesheet" href="controls.css" />
   </head>
   <body>
+    <canvas id="fluid-background-canvas" aria-hidden="true"></canvas>
     <div id="demo-layout" class="demo-layout">
       <div id="hello-row"></div>
       <div id="controls-row" class="demo-row"></div>
@@ -83,6 +84,12 @@
           <label for="svgFileInput">导入 SVG 图形</label>
           <input id="svgFileInput" type="file" accept=".svg,image/svg+xml" />
           <div id="svgImportStatus" class="svg-import-status">选择 SVG 文件后，会直接使用 SVG 的透明形状生成按钮。</div>
+        </div>
+
+        <div class="control-group svg-import-group">
+          <label for="backgroundFileInput">替换背景</label>
+          <input id="backgroundFileInput" type="file" accept="image/*,video/*" />
+          <div class="svg-import-status">支持图片或视频；未选择时使用默认流动渐变背景。</div>
         </div>
           </div>
         </section>
