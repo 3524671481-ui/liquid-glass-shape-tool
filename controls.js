@@ -141,7 +141,7 @@ function setupControlSliders() {
     shapeHeight.addEventListener('input', updatePrimaryShapeGeometry)
   }
 
-  setupPenTool()
+  setupSvgImport()
 
   // Set up randomize button
   const randomizeButton = document.getElementById('randomizeButton')
@@ -222,120 +222,125 @@ function toggleButtonsVisibility() {
   }
 }
 
-function setupPenTool() {
-  const canvas = document.getElementById('penCanvas')
-  const closePathButton = document.getElementById('closePathButton')
-  const clearPathButton = document.getElementById('clearPathButton')
+function setupSvgImport() {
+  const fileInput = document.getElementById('svgFileInput')
+  const status = document.getElementById('svgImportStatus')
 
-  if (!canvas) return
+  if (!fileInput) return
 
-  const ctx = canvas.getContext('2d')
-  window.customPathPoints = window.primaryShapeButton?.customPoints || [
-    { x: 0.25, y: 0.08 },
-    { x: 0.75, y: 0.08 },
-    { x: 0.94, y: 0.36 },
-    { x: 0.82, y: 0.88 },
-    { x: 0.22, y: 0.88 },
-    { x: 0.06, y: 0.42 }
-  ]
-  window.customPathClosed = true
+  fileInput.addEventListener('change', async event => {
+    const file = event.target.files?.[0]
+    if (!file) return
 
-  function drawPenCanvas() {
-    const width = canvas.width
-    const height = canvas.height
+    try {
+      const svgText = await file.text()
+      const points = extractSvgPathPoints(svgText)
 
-    ctx.clearRect(0, 0, width, height)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.36)'
-    ctx.fillRect(0, 0, width, height)
+      if (points.length < 3) {
+        throw new Error('没有找到可用的闭合图形')
+      }
 
-    ctx.strokeStyle = 'rgba(0, 122, 255, 0.25)'
-    ctx.lineWidth = 1
-    for (let x = 20; x < width; x += 20) {
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, height)
-      ctx.stroke()
+      window.customPathPoints = points
+      updateImportedSvgButton(points)
+
+      if (status) {
+        status.textContent = `已导入：${file.name}，提取 ${points.length} 个轮廓点。`
+      }
+    } catch (error) {
+      if (status) {
+        status.textContent = `导入失败：${error.message}`
+      }
+      console.error('SVG import failed:', error)
     }
-    for (let y = 20; y < height; y += 20) {
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(width, y)
-      ctx.stroke()
-    }
-
-    const points = window.customPathPoints
-    if (points.length) {
-      ctx.beginPath()
-      ctx.moveTo(points[0].x * width, points[0].y * height)
-      points.slice(1).forEach(point => ctx.lineTo(point.x * width, point.y * height))
-      if (window.customPathClosed && points.length > 2) ctx.closePath()
-      ctx.fillStyle = 'rgba(0, 122, 255, 0.12)'
-      ctx.strokeStyle = '#007aff'
-      ctx.lineWidth = 2
-      if (window.customPathClosed && points.length > 2) ctx.fill()
-      ctx.stroke()
-    }
-
-    points.forEach((point, index) => {
-      const x = point.x * width
-      const y = point.y * height
-      ctx.beginPath()
-      ctx.arc(x, y, 5, 0, Math.PI * 2)
-      ctx.fillStyle = index === 0 ? '#34c759' : '#007aff'
-      ctx.fill()
-      ctx.strokeStyle = 'white'
-      ctx.lineWidth = 2
-      ctx.stroke()
-    })
-  }
-
-  function applyCustomPath() {
-    if (!window.primaryShapeButton || window.customPathPoints.length < 3) return
-
-    const shapeWidth = document.getElementById('shapeWidth')
-    const shapeHeight = document.getElementById('shapeHeight')
-    const width = shapeWidth ? parseInt(shapeWidth.value) : window.primaryShapeButton.width
-    const height = shapeHeight ? parseInt(shapeHeight.value) : window.primaryShapeButton.height
-
-    window.primaryShapeButton.setCustomPath(window.customPathPoints, width, height)
-  }
-
-  canvas.addEventListener('click', event => {
-    const rect = canvas.getBoundingClientRect()
-    const point = {
-      x: Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1),
-      y: Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1)
-    }
-
-    if (window.customPathClosed) {
-      window.customPathPoints = []
-      window.customPathClosed = false
-    }
-
-    if (window.customPathPoints.length < 32) {
-      window.customPathPoints.push(point)
-    }
-
-    drawPenCanvas()
   })
+}
 
-  if (closePathButton) {
-    closePathButton.addEventListener('click', () => {
-      window.customPathClosed = true
-      drawPenCanvas()
-      applyCustomPath()
-    })
+function extractSvgPathPoints(svgText) {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+  if (doc.querySelector('parsererror')) {
+    throw new Error('SVG 文件格式无效')
   }
 
-  if (clearPathButton) {
-    clearPathButton.addEventListener('click', () => {
-      window.customPathPoints = []
-      window.customPathClosed = false
-      drawPenCanvas()
-    })
+  const svg = doc.querySelector('svg')
+  if (!svg) {
+    throw new Error('文件中没有 SVG 根节点')
   }
 
-  drawPenCanvas()
+  const host = document.createElement('div')
+  host.style.position = 'fixed'
+  host.style.left = '-10000px'
+  host.style.top = '-10000px'
+  host.style.width = '0'
+  host.style.height = '0'
+  host.style.overflow = 'hidden'
+  host.appendChild(svg)
+  document.body.appendChild(host)
+
+  try {
+    const elements = [...svg.querySelectorAll('path, polygon, polyline, circle, ellipse, rect')]
+    const drawable = elements
+      .map(element => ({ element, length: getSvgElementLength(element) }))
+      .filter(item => item.length > 0)
+      .sort((a, b) => b.length - a.length)[0]
+
+    if (!drawable) {
+      throw new Error('只支持 path、polygon、polyline、circle、ellipse、rect 图形')
+    }
+
+    return normalizeSvgPoints(sampleSvgElement(drawable.element, drawable.length))
+  } finally {
+    document.body.removeChild(host)
+  }
+}
+
+function getSvgElementLength(element) {
+  if (typeof element.getTotalLength === 'function') {
+    try {
+      return element.getTotalLength()
+    } catch (error) {
+      return 0
+    }
+  }
+
+  return 0
+}
+
+function sampleSvgElement(element, length) {
+  const maxPoints = 32
+  const points = []
+
+  for (let i = 0; i < maxPoints; i++) {
+    const point = element.getPointAtLength((length * i) / maxPoints)
+    points.push({ x: point.x, y: point.y })
+  }
+
+  return points
+}
+
+function normalizeSvgPoints(points) {
+  const minX = Math.min(...points.map(point => point.x))
+  const maxX = Math.max(...points.map(point => point.x))
+  const minY = Math.min(...points.map(point => point.y))
+  const maxY = Math.max(...points.map(point => point.y))
+  const width = Math.max(maxX - minX, 1)
+  const height = Math.max(maxY - minY, 1)
+  const padding = 0.06
+
+  return points.map(point => ({
+    x: padding + ((point.x - minX) / width) * (1 - padding * 2),
+    y: padding + ((point.y - minY) / height) * (1 - padding * 2)
+  }))
+}
+
+function updateImportedSvgButton(points) {
+  if (!window.primaryShapeButton) return
+
+  const shapeWidth = document.getElementById('shapeWidth')
+  const shapeHeight = document.getElementById('shapeHeight')
+  const width = shapeWidth ? parseInt(shapeWidth.value) : window.primaryShapeButton.width
+  const height = shapeHeight ? parseInt(shapeHeight.value) : window.primaryShapeButton.height
+
+  window.primaryShapeButton.setCustomPath(points, width, height)
 }
 
 // Create glass container for controls panel

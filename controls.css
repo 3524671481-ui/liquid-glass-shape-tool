@@ -143,35 +143,19 @@
   outline: none;
 }
 
-.pen-tool-group canvas {
+.svg-import-group input[type='file'] {
   width: 100%;
-  height: 180px;
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.34);
-  cursor: crosshair;
-  display: block;
-}
-
-.pen-tool-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.pen-tool-actions button {
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.45);
   color: #222;
   font: inherit;
-  font-weight: 600;
-  padding: 8px 10px;
+  padding: 10px;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
-.pen-tool-hint {
+.svg-import-status {
   margin: 8px 0 0;
   color: #555;
   font-size: 12px;

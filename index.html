@@ -77,24 +77,20 @@
       <div id="controls-content" class="controls-content">
         <h3>液态玻璃形状工具</h3>
 
-        <div class="control-group pen-tool-group">
-          <label>钢笔绘制</label>
-          <canvas id="penCanvas" width="240" height="180" aria-label="钢笔绘制画板"></canvas>
-          <div class="pen-tool-actions">
-            <button id="closePathButton" type="button">闭合路径</button>
-            <button id="clearPathButton" type="button">清空重画</button>
-          </div>
-          <p class="pen-tool-hint">点击画板添加锚点，闭合后生成按钮轮廓。</p>
+        <div class="control-group svg-import-group">
+          <label for="svgFileInput">导入 SVG 图形</label>
+          <input id="svgFileInput" type="file" accept=".svg,image/svg+xml" />
+          <div id="svgImportStatus" class="svg-import-status">选择一个 SVG 文件后，会自动提取其中的图形轮廓。</div>
         </div>
 
         <div class="control-group">
-          <label>形状宽度 <span class="control-value" id="shapeWidthValue">110</span></label>
-          <input type="range" id="shapeWidth" min="48" max="220" step="1" value="110" />
+          <label>形状宽度 <span class="control-value" id="shapeWidthValue">180</span></label>
+          <input type="range" id="shapeWidth" min="48" max="280" step="1" value="180" />
         </div>
 
         <div class="control-group">
-          <label>形状高度 <span class="control-value" id="shapeHeightValue">110</span></label>
-          <input type="range" id="shapeHeight" min="48" max="180" step="1" value="110" />
+          <label>形状高度 <span class="control-value" id="shapeHeightValue">140</span></label>
+          <input type="range" id="shapeHeight" min="48" max="240" step="1" value="140" />
         </div>
 
         <div class="control-group">
