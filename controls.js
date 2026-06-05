@@ -192,6 +192,9 @@ function toggleButtonsVisibility() {
   if (demoLayout) {
     demoLayout.style.display = window.glassControls.hideButtons ? 'none' : 'flex'
   }
+  if (window.primaryShapeButton?.element) {
+    window.primaryShapeButton.element.style.display = window.glassControls.hideButtons ? 'none' : 'flex'
+  }
 }
 
 function setupSvgImport() {
@@ -420,29 +423,10 @@ function updateImportedSvgButton(mask) {
 
 // Create glass container for controls panel
 function initializeControlsContainer() {
-  window.controlsContainer = new Container({
-    borderRadius: 12,
-    type: 'rounded',
-    tintOpacity: window.glassControls.tintOpacity
-  })
-
-  // Get the existing controls wrapper and move existing content behind the glass
   const controlsWrapper = document.getElementById('glass-controls-container')
-  const controlsContent = document.getElementById('controls-content')
-
-  // Remove controls content from wrapper temporarily
-  controlsWrapper.removeChild(controlsContent)
-
-  // Add glass container to wrapper
-  controlsWrapper.appendChild(window.controlsContainer.element)
-
-  // Add controls content back on top of glass
-  window.controlsContainer.element.appendChild(controlsContent)
-
-  // Force the container to update its size based on CSS
-  setTimeout(() => {
-    window.controlsContainer.updateSizeFromDOM()
-  }, 100)
+  if (controlsWrapper) {
+    controlsWrapper.classList.add('solid-controls')
+  }
 }
 
 // Mobile controls toggle functionality

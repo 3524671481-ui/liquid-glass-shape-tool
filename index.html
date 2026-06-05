@@ -67,22 +67,30 @@
     </div>
 
     <!-- Mobile Controls Toggle Button -->
-    <button id="mobile-controls-toggle" class="mobile-controls-toggle" aria-label="Toggle Controls Panel">
-      <span class="toggle-icon">⚙️</span>
-      <span class="toggle-text">设置</span>
-    </button>
+    <button id="mobile-controls-toggle" class="mobile-controls-toggle" aria-label="Toggle Controls Panel"></button>
 
     <!-- Glass Effects Controls Panel -->
     <div id="glass-controls-container" class="glass-controls">
       <div id="controls-content" class="controls-content">
+        <div class="settings-kicker">POINT / GLASS TOOL</div>
         <h3>液态玻璃形状工具</h3>
 
+        <section class="settings-section">
+          <div class="section-index">01</div>
+          <div class="section-body">
+            <h4>导入</h4>
         <div class="control-group svg-import-group">
           <label for="svgFileInput">导入 SVG 图形</label>
           <input id="svgFileInput" type="file" accept=".svg,image/svg+xml" />
           <div id="svgImportStatus" class="svg-import-status">选择 SVG 文件后，会直接使用 SVG 的透明形状生成按钮。</div>
         </div>
+          </div>
+        </section>
 
+        <section class="settings-section">
+          <div class="section-index">02</div>
+          <div class="section-body">
+            <h4>边缘</h4>
         <div class="control-group">
           <label>边缘折射强度 <span class="control-value" id="edgeValue">0.01</span></label>
           <input type="range" id="edgeIntensity" min="0" max="0.1" step="0.001" value="0.01" />
@@ -107,7 +115,13 @@
           <label>高光影响范围 <span class="control-value" id="rimDistValue">0.8</span></label>
           <input type="range" id="rimDistance" min="0.1" max="2.0" step="0.05" value="0.8" />
         </div>
+          </div>
+        </section>
 
+        <section class="settings-section">
+          <div class="section-index">03</div>
+          <div class="section-body">
+            <h4>内部</h4>
         <div class="control-group">
           <label>中心影响范围 <span class="control-value" id="baseDistValue">0.1</span></label>
           <input type="range" id="baseDistance" min="0.05" max="0.3" step="0.01" value="0.1" />
@@ -122,7 +136,13 @@
           <label>水波纹理 <span class="control-value" id="rippleValue">0.1</span></label>
           <input type="range" id="rippleEffect" min="0" max="0.5" step="0.01" value="0.1" />
         </div>
+          </div>
+        </section>
 
+        <section class="settings-section">
+          <div class="section-index">04</div>
+          <div class="section-body">
+            <h4>外观</h4>
         <div class="control-group">
           <label>背景模糊 <span class="control-value" id="blurValue">5.0</span></label>
           <input type="range" id="blurRadius" min="1" max="15" step="0.5" value="5.0" />
@@ -136,7 +156,13 @@
         <div class="control-group">
           <label> <input type="checkbox" id="warpToggle" /> 开启中心扭曲 </label>
         </div>
+          </div>
+        </section>
 
+        <section class="settings-section">
+          <div class="section-index">05</div>
+          <div class="section-body">
+            <h4>操作</h4>
         <div class="control-group">
           <label> <input type="checkbox" id="hideButtonsToggle" /> 隐藏形状预览 </label>
         </div>
@@ -144,6 +170,8 @@
         <div class="control-group control-group-button">
           <button id="randomizeButton" class="randomize-button">随机玻璃效果</button>
         </div>
+          </div>
+        </section>
       </div>
     </div>
 

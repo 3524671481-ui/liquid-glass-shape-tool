@@ -40,9 +40,13 @@ class Button extends Container {
   }
 
   setGeometrySize(width = this.customWidth, height = this.customHeight, type = this.type) {
+    const keepInteractiveClass = this.element.classList.contains('glass-button-interactive')
+    const keepResizingClass = this.element.classList.contains('is-resizing')
     this.type = type
     this.shapeType = Container.getShapeType(this.type)
     this.element.className = `glass-container glass-button glass-button-${this.type}`
+    if (keepInteractiveClass) this.element.classList.add('glass-button-interactive')
+    if (keepResizingClass) this.element.classList.add('is-resizing')
 
     let nextWidth = parseInt(width) || this.size
     let nextHeight = parseInt(height) || this.size
