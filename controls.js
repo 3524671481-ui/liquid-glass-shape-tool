@@ -8,8 +8,8 @@ window.glassControls = {
   baseDistance: 0.1,
   cornerBoost: 0.02,
   rippleEffect: 0.1,
-  blurRadius: 5.0,
-  tintOpacity: 0.2,
+  blurRadius: 2.0,
+  tintOpacity: 0,
   warp: false,
   hideButtons: false
 }

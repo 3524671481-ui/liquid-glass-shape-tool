@@ -7,7 +7,7 @@ const primaryShape = new Button({
   width: 180,
   height: 72,
   label: 'Imported SVG glass button',
-  tintOpacity: 0.22
+  tintOpacity: 0
 })
 
 window.shapeButtons.push(primaryShape)
@@ -23,6 +23,7 @@ function setupDynamicBackground() {
   const ctx = canvas.getContext('2d')
   let media = null
   let mediaType = null
+  let defaultBackgroundReady = false
 
   window.dynamicBackgroundCanvas = canvas
 
@@ -30,8 +31,12 @@ function setupDynamicBackground() {
   defaultBackground.onload = () => {
     media = defaultBackground
     mediaType = 'image'
+    defaultBackgroundReady = true
   }
-  defaultBackground.src = '../../bg.png'
+  defaultBackground.onerror = () => {
+    defaultBackgroundReady = true
+  }
+  defaultBackground.src = 'assets/bg.png'
 
   function resizeCanvas() {
     const ratio = window.devicePixelRatio || 1
@@ -113,11 +118,18 @@ function setupDynamicBackground() {
     }
   }
 
+  function drawLoadingBackground() {
+    ctx.fillStyle = '#050711'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }
+
   function frame(time) {
     if (media && mediaType === 'image') {
       drawCover(media)
     } else if (media && mediaType === 'video' && media.readyState >= 2) {
       drawCover(media)
+    } else if (!defaultBackgroundReady) {
+      drawLoadingBackground()
     } else {
       drawFluid(time)
     }
@@ -150,7 +162,7 @@ function setupDynamicBackground() {
 }
 
 function loadDefaultSvgShape() {
-  const defaultSvgPath = '../../SVG/%E8%B5%84%E6%BA%90%203.svg'
+  const defaultSvgPath = 'assets/default-shape.svg'
   const image = new Image()
 
   image.onload = () => {
@@ -158,14 +170,25 @@ function loadDefaultSvgShape() {
 
     const mask = window.rasterizeImageToMask(image, image.naturalWidth / image.naturalHeight)
     const size = Math.max(window.primaryShapeButton.width, window.primaryShapeButton.height)
-    const width = mask.aspect >= 1 ? size : Math.round(size * mask.aspect)
-    const height = mask.aspect >= 1 ? Math.round(size / mask.aspect) : size
+    const width = (mask.aspect >= 1 ? size : Math.round(size * mask.aspect)) * 3
+    const height = (mask.aspect >= 1 ? Math.round(size / mask.aspect) : size) * 3
 
     window.primaryShapeButton.setGeometrySize(width, height, 'custom')
     window.primaryShapeButton.setMaskImage(mask.dataUrl)
+    placeDefaultShape(window.primaryShapeButton)
   }
 
   image.src = defaultSvgPath
+}
+
+function placeDefaultShape(button) {
+  const element = button.element
+  const left = Math.round((window.innerWidth - button.width) / 2)
+  const top = Math.round(window.innerHeight / 3 - button.height / 2)
+
+  element.style.left = Math.max(0, Math.min(window.innerWidth - button.width, left)) + 'px'
+  element.style.top = Math.max(0, Math.min(window.innerHeight - button.height, top)) + 'px'
+  if (button.render) button.render()
 }
 
 

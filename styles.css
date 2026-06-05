@@ -14,7 +14,7 @@ body {
   height: 100vh;
   z-index: 0;
   display: block;
-  background: #050711;
+  background: #050711 url('assets/bg.png') center / cover no-repeat;
 }
 
 .content {
