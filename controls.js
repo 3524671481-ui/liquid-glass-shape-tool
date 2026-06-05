@@ -55,10 +55,7 @@ function updateAllGlassInstances() {
         gl.uniform1f(instance.gl_refs.warpLoc, window.glassControls.warp ? 1.0 : 0.0)
       }
       if (instance.gl_refs.tintOpacityLoc) {
-        // Use instance's own tintOpacity, but allow global control to override for demonstration
-        const tintOpacity =
-          instance === window.controlsContainer ? instance.tintOpacity : window.glassControls.tintOpacity
-        gl.uniform1f(instance.gl_refs.tintOpacityLoc, tintOpacity)
+        gl.uniform1f(instance.gl_refs.tintOpacityLoc, window.glassControls.tintOpacity)
       }
 
       // Force immediate re-render
@@ -209,8 +206,8 @@ function setupSvgImport() {
 
     try {
       const svgText = await readFileAsText(file)
-      const maskDataUrl = await rasterizeSvgToMask(svgText)
-      updateImportedSvgButton(maskDataUrl)
+      const mask = await rasterizeSvgToMask(svgText)
+      updateImportedSvgButton(mask)
 
       if (status) {
         status.textContent = `已导入：${file.name}，正在使用 SVG 原始形状作为按钮遮罩。`
@@ -243,6 +240,7 @@ function rasterizeSvgToMask(svgText) {
 
     const svg = doc.querySelector('svg')
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    const svgSize = getSvgIntrinsicSize(svg)
 
     const image = new Image()
     const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' })
@@ -252,17 +250,23 @@ function rasterizeSvgToMask(svgText) {
       URL.revokeObjectURL(objectUrl)
 
       const canvas = document.createElement('canvas')
-      const size = 768
-      canvas.width = size
-      canvas.height = size
+      const maxTextureSize = 768
+      const aspect = svgSize.width / svgSize.height
+      const canvasWidth = aspect >= 1 ? maxTextureSize : Math.round(maxTextureSize * aspect)
+      const canvasHeight = aspect >= 1 ? Math.round(maxTextureSize / aspect) : maxTextureSize
+      canvas.width = canvasWidth
+      canvas.height = canvasHeight
 
       const ctx = canvas.getContext('2d')
-      ctx.clearRect(0, 0, size, size)
-      ctx.drawImage(image, 0, 0, size, size)
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+      ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight)
 
-      removeSolidSvgBackground(ctx, size, size)
-      encodeMaskDistanceField(ctx, size, size)
-      resolve(canvas.toDataURL('image/png'))
+      removeSolidSvgBackground(ctx, canvasWidth, canvasHeight)
+      encodeMaskDistanceField(ctx, canvasWidth, canvasHeight)
+      resolve({
+        dataUrl: canvas.toDataURL('image/png'),
+        aspect
+      })
     }
 
     image.onerror = () => {
@@ -272,6 +276,23 @@ function rasterizeSvgToMask(svgText) {
 
     image.src = objectUrl
   })
+}
+
+function getSvgIntrinsicSize(svg) {
+  const viewBox = svg.getAttribute('viewBox')
+  if (viewBox) {
+    const parts = viewBox
+      .trim()
+      .split(/[\s,]+/)
+      .map(Number)
+    if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+      return { width: parts[2], height: parts[3] }
+    }
+  }
+
+  const width = parseFloat(svg.getAttribute('width')) || 1
+  const height = parseFloat(svg.getAttribute('height')) || 1
+  return { width, height }
 }
 
 function encodeMaskDistanceField(ctx, width, height) {
@@ -383,11 +404,18 @@ function removeSolidSvgBackground(ctx, width, height) {
   ctx.putImageData(imageData, 0, 0)
 }
 
-function updateImportedSvgButton(dataUrl) {
+function updateImportedSvgButton(mask) {
   if (!window.primaryShapeButton) return
 
-  window.primaryShapeButton.setGeometrySize(window.primaryShapeButton.width, window.primaryShapeButton.height, 'custom')
-  window.primaryShapeButton.setMaskImage(dataUrl)
+  const currentSize = Math.max(window.primaryShapeButton.width, window.primaryShapeButton.height)
+  const width = mask.aspect >= 1 ? currentSize : Math.round(currentSize * mask.aspect)
+  const height = mask.aspect >= 1 ? Math.round(currentSize / mask.aspect) : currentSize
+
+  window.primaryShapeButton.setGeometrySize(width, height, 'custom')
+  window.primaryShapeButton.setMaskImage(mask.dataUrl)
+  if (window.keepButtonInViewport) {
+    window.keepButtonInViewport(window.primaryShapeButton)
+  }
 }
 
 // Create glass container for controls panel
@@ -395,7 +423,7 @@ function initializeControlsContainer() {
   window.controlsContainer = new Container({
     borderRadius: 12,
     type: 'rounded',
-    tintOpacity: 0.7
+    tintOpacity: window.glassControls.tintOpacity
   })
 
   // Get the existing controls wrapper and move existing content behind the glass

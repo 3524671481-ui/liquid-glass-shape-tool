@@ -2,13 +2,13 @@
 .mobile-controls-toggle {
   display: flex;
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   right: 20px;
-  z-index: 10002;
+  z-index: 10003;
 
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 50%;
 
   width: 48px;
@@ -16,13 +16,13 @@
   padding: 0;
   font-size: 14px;
   font-weight: 500;
-  color: #007aff;
+  color: #fff;
   font-family: system-ui, -apple-system, sans-serif;
 
   cursor: pointer;
   transition: all 0.3s ease;
 
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 
   align-items: center;
   justify-content: center;
@@ -30,8 +30,8 @@
 }
 
 .mobile-controls-toggle:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.26);
+  transform: translateY(-1px);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
 }
 
@@ -41,12 +41,12 @@
 }
 
 .mobile-controls-toggle .toggle-icon {
-  font-size: 16px;
+  font-size: 18px;
   transition: transform 0.3s ease;
 }
 
 .mobile-controls-toggle.active .toggle-icon {
-  transform: rotate(45deg);
+  transform: rotate(90deg);
 }
 
 .mobile-controls-toggle .toggle-text {
@@ -78,18 +78,18 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  bottom: 20px;
+  bottom: 88px;
   width: 300px;
   z-index: 10000;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
   color: #333;
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
 }
 
 .glass-controls.collapsed {
   opacity: 0;
-  transform: translateY(12px) scale(0.98);
+  transform: translateY(20px) scale(0.96);
   visibility: hidden;
   pointer-events: none;
 }
@@ -97,7 +97,7 @@
 .glass-controls .glass-container {
   width: 300px;
   height: 100%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.22);
   position: relative;
 }
 
@@ -124,7 +124,7 @@
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.34);
   outline: none;
   -webkit-appearance: none;
 }
@@ -145,7 +145,7 @@
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.28);
   color: #222;
   font: inherit;
   padding: 10px;
@@ -237,7 +237,7 @@
 }
 
 .randomize-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.24);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   color: #222;

@@ -57,6 +57,7 @@ function setupInteractiveGlassButton(button) {
       aspect: button.width / button.height
     }
 
+    element.classList.add('is-resizing')
     resizeHandle.setPointerCapture(event.pointerId)
   })
 
@@ -80,6 +81,7 @@ function setupInteractiveGlassButton(button) {
       } else {
         button.setGeometrySize(nextWidth, nextHeight, 'pill')
       }
+      keepButtonInViewport(button)
     }
   })
 
@@ -89,9 +91,22 @@ function setupInteractiveGlassButton(button) {
     }
     if (resizeState && event.pointerId === resizeState.pointerId) {
       resizeState = null
+      element.classList.remove('is-resizing')
     }
   })
 }
+
+function keepButtonInViewport(button) {
+  const element = button.element
+  const left = parseFloat(element.style.left) || 0
+  const top = parseFloat(element.style.top) || 0
+
+  element.style.left = Math.max(0, Math.min(window.innerWidth - button.width, left)) + 'px'
+  element.style.top = Math.max(0, Math.min(window.innerHeight - button.height, top)) + 'px'
+  if (button.render) button.render()
+}
+
+window.keepButtonInViewport = keepButtonInViewport
 
 let resizeTimeout
 window.addEventListener('resize', () => {
