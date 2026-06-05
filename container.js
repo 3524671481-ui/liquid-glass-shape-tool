@@ -512,12 +512,12 @@ class Container {
         // Glass refraction effects
         float distFromEdgeShape;
         vec2 shapeNormal; // Normal vector pointing away from shape surface
-        float maskTextureAlpha = texture2D(u_mask, coord).a;
+        vec4 maskInfo = texture2D(u_mask, coord);
+        float maskTextureAlpha = maskInfo.a;
         
         if (u_useMaskTexture > 0.5) {
-          distFromEdgeShape = maskTextureAlpha * min(u_resolution.x, u_resolution.y);
-          vec2 center = vec2(0.5, 0.5);
-          shapeNormal = normalize(coord - center);
+          distFromEdgeShape = maskInfo.b * min(u_resolution.x, u_resolution.y);
+          shapeNormal = normalize(maskInfo.rg * 2.0 - 1.0);
         } else if (u_shapeType > 1.5 && u_shapeType < 2.5) {
           distFromEdgeShape = -pillDistance(coord, u_resolution, u_borderRadius);
           

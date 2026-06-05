@@ -286,6 +286,7 @@ function rasterizeSvgToMask(svgText) {
       ctx.drawImage(image, 0, 0, size, size)
 
       removeSolidSvgBackground(ctx, size, size)
+      encodeMaskDistanceField(ctx, size, size)
       resolve(canvas.toDataURL('image/png'))
     }
 
@@ -296,6 +297,81 @@ function rasterizeSvgToMask(svgText) {
 
     image.src = objectUrl
   })
+}
+
+function encodeMaskDistanceField(ctx, width, height) {
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const source = imageData.data
+  const pixelCount = width * height
+  const inside = new Uint8Array(pixelCount)
+  const distance = new Float32Array(pixelCount)
+  const maxDistance = 96
+  const diagonalCost = Math.SQRT2
+
+  for (let i = 0; i < pixelCount; i++) {
+    const alpha = source[i * 4 + 3]
+    inside[i] = alpha > 24 ? 1 : 0
+    distance[i] = inside[i] ? maxDistance : 0
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = y * width + x
+      if (!inside[index]) continue
+
+      let value = distance[index]
+      if (x > 0) value = Math.min(value, distance[index - 1] + 1)
+      if (y > 0) value = Math.min(value, distance[index - width] + 1)
+      if (x > 0 && y > 0) value = Math.min(value, distance[index - width - 1] + diagonalCost)
+      if (x < width - 1 && y > 0) value = Math.min(value, distance[index - width + 1] + diagonalCost)
+      distance[index] = value
+    }
+  }
+
+  for (let y = height - 1; y >= 0; y--) {
+    for (let x = width - 1; x >= 0; x--) {
+      const index = y * width + x
+      if (!inside[index]) continue
+
+      let value = distance[index]
+      if (x < width - 1) value = Math.min(value, distance[index + 1] + 1)
+      if (y < height - 1) value = Math.min(value, distance[index + width] + 1)
+      if (x < width - 1 && y < height - 1) value = Math.min(value, distance[index + width + 1] + diagonalCost)
+      if (x > 0 && y < height - 1) value = Math.min(value, distance[index + width - 1] + diagonalCost)
+      distance[index] = value
+    }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = y * width + x
+      const offset = index * 4
+      const alpha = source[offset + 3]
+
+      if (!inside[index]) {
+        source[offset] = 128
+        source[offset + 1] = 128
+        source[offset + 2] = 0
+        source[offset + 3] = 0
+        continue
+      }
+
+      const left = distance[y * width + Math.max(0, x - 1)]
+      const right = distance[y * width + Math.min(width - 1, x + 1)]
+      const top = distance[Math.max(0, y - 1) * width + x]
+      const bottom = distance[Math.min(height - 1, y + 1) * width + x]
+      const normalX = left - right
+      const normalY = top - bottom
+      const normalLength = Math.hypot(normalX, normalY) || 1
+
+      source[offset] = Math.round(((normalX / normalLength) * 0.5 + 0.5) * 255)
+      source[offset + 1] = Math.round(((normalY / normalLength) * 0.5 + 0.5) * 255)
+      source[offset + 2] = Math.round((Math.min(distance[index], maxDistance) / maxDistance) * 255)
+      source[offset + 3] = alpha
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0)
 }
 
 function removeSolidSvgBackground(ctx, width, height) {
