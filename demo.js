@@ -170,8 +170,8 @@ function loadDefaultSvgShape() {
 
     const mask = window.rasterizeImageToMask(image, image.naturalWidth / image.naturalHeight)
     const size = Math.max(window.primaryShapeButton.width, window.primaryShapeButton.height)
-    const width = (mask.aspect >= 1 ? size : Math.round(size * mask.aspect)) * 3
-    const height = (mask.aspect >= 1 ? Math.round(size / mask.aspect) : size) * 3
+    const width = (mask.aspect >= 1 ? size : Math.round(size * mask.aspect)) * 2
+    const height = (mask.aspect >= 1 ? Math.round(size / mask.aspect) : size) * 2
 
     window.primaryShapeButton.setGeometrySize(width, height, 'custom')
     window.primaryShapeButton.setMaskImage(mask.dataUrl)
@@ -183,7 +183,7 @@ function loadDefaultSvgShape() {
 
 function placeDefaultShape(button) {
   const element = button.element
-  const left = Math.round((window.innerWidth - button.width) / 2)
+  const left = Math.round(window.innerWidth * 0.08)
   const top = Math.round(window.innerHeight / 3 - button.height / 2)
 
   element.style.left = Math.max(0, Math.min(window.innerWidth - button.width, left)) + 'px'

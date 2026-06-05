@@ -1,10 +1,10 @@
 // Glass Controls System
 window.glassControls = {
-  edgeIntensity: 0.01,
-  rimIntensity: 0.05,
+  edgeIntensity: 0.077,
+  rimIntensity: 0.2,
   baseIntensity: 0.01,
   edgeDistance: 0.15,
-  rimDistance: 0.8,
+  rimDistance: 0.4,
   baseDistance: 0.1,
   cornerBoost: 0.02,
   rippleEffect: 0.1,
@@ -282,12 +282,13 @@ function rasterizeImageToMask(image, aspect) {
   const maxTextureSize = 768
   const canvasWidth = aspect >= 1 ? maxTextureSize : Math.round(maxTextureSize * aspect)
   const canvasHeight = aspect >= 1 ? Math.round(maxTextureSize / aspect) : maxTextureSize
+  const safeInset = Math.round(Math.min(canvasWidth, canvasHeight) * 0.08)
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-  ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight)
+  ctx.drawImage(image, safeInset, safeInset, canvasWidth - safeInset * 2, canvasHeight - safeInset * 2)
 
   removeSolidSvgBackground(ctx, canvasWidth, canvasHeight)
   encodeMaskDistanceField(ctx, canvasWidth, canvasHeight)
