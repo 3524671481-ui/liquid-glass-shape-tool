@@ -7,23 +7,34 @@
   width: 42px;
   height: 42px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.56);
+  border: 1px solid #111;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(18px) saturate(1.35);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.72);
+  background: #f7f7f4;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
 .mobile-controls-toggle:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26), inset 0 1px 1px rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .mobile-controls-toggle.active {
-  background: rgba(255, 255, 255, 0.34);
+  background: #111;
+}
+
+.toggle-bar {
+  display: block;
+  width: 17px;
+  height: 1px;
+  margin: 4px auto;
+  background: #111;
+  transition: background 0.18s ease;
+}
+
+.mobile-controls-toggle.active .toggle-bar {
+  background: #f7f7f4;
 }
 
 /* Solid settings panel */
@@ -63,7 +74,7 @@
 }
 
 .settings-kicker {
-  margin-bottom: 54px;
+  margin-bottom: 28px;
   font-size: 9px;
   line-height: 1.1;
   letter-spacing: 0;
@@ -71,11 +82,7 @@
 }
 
 .glass-controls h3 {
-  margin: 0 0 28px;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0;
+  display: none;
 }
 
 .settings-section {
@@ -100,6 +107,43 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0;
+}
+
+.section-toggle {
+  display: block;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.section-toggle::after {
+  content: '+';
+  float: right;
+  font-weight: 400;
+}
+
+.section-toggle[aria-expanded='true']::after {
+  content: '-';
+}
+
+.settings-section.section-collapsed {
+  padding-bottom: 16px;
+}
+
+.settings-section.section-collapsed .control-group,
+.settings-section.section-collapsed .svg-import-status {
+  display: none;
 }
 
 .control-group {

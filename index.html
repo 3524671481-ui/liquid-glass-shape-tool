@@ -68,13 +68,16 @@
     </div>
 
     <!-- Mobile Controls Toggle Button -->
-    <button id="mobile-controls-toggle" class="mobile-controls-toggle" aria-label="Toggle Controls Panel"></button>
+    <button id="mobile-controls-toggle" class="mobile-controls-toggle" aria-label="Toggle Controls Panel">
+      <span class="toggle-bar"></span>
+      <span class="toggle-bar"></span>
+      <span class="toggle-bar"></span>
+    </button>
 
     <!-- Glass Effects Controls Panel -->
     <div id="glass-controls-container" class="glass-controls">
       <div id="controls-content" class="controls-content">
         <div class="settings-kicker">POINT / GLASS TOOL</div>
-        <h3>液态玻璃形状工具</h3>
 
         <section class="settings-section">
           <div class="section-index">01</div>
@@ -89,7 +92,7 @@
         <div class="control-group svg-import-group">
           <label for="backgroundFileInput">替换背景</label>
           <input id="backgroundFileInput" type="file" accept="image/*,video/*" />
-          <div class="svg-import-status">支持图片或视频；未选择时使用默认流动渐变背景。</div>
+          <div class="svg-import-status">支持图片或视频；未选择时使用默认 bg.png 背景。</div>
         </div>
           </div>
         </section>

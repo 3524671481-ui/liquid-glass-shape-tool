@@ -26,6 +26,13 @@ function setupDynamicBackground() {
 
   window.dynamicBackgroundCanvas = canvas
 
+  const defaultBackground = new Image()
+  defaultBackground.onload = () => {
+    media = defaultBackground
+    mediaType = 'image'
+  }
+  defaultBackground.src = '../../bg.png'
+
   function resizeCanvas() {
     const ratio = window.devicePixelRatio || 1
     canvas.width = Math.round(window.innerWidth * ratio)
@@ -222,7 +229,12 @@ function setupInteractiveGlassButton(button) {
 
     if (resizeState && event.pointerId === resizeState.pointerId) {
       const delta = Math.max(event.clientX - resizeState.startX, event.clientY - resizeState.startY)
-      const nextWidth = Math.max(48, Math.min(420, resizeState.width + delta))
+      const left = parseFloat(element.style.left) || 0
+      const top = parseFloat(element.style.top) || 0
+      const maxWidthByViewport = Math.max(48, window.innerWidth - left)
+      const maxHeightByViewport = Math.max(48, window.innerHeight - top)
+      const maxWidth = Math.min(maxWidthByViewport, maxHeightByViewport * resizeState.aspect)
+      const nextWidth = Math.max(48, Math.min(maxWidth, resizeState.width + delta))
       const nextHeight = Math.round(nextWidth / resizeState.aspect)
 
       if (button.useMaskTexture) {

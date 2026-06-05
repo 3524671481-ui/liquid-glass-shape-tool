@@ -466,9 +466,29 @@ function setupMobileToggle() {
   }
 }
 
+function setupSettingsSections() {
+  document.querySelectorAll('.settings-section').forEach(section => {
+    const heading = section.querySelector('.section-body h4')
+    if (!heading) return
+
+    const toggle = document.createElement('button')
+    toggle.type = 'button'
+    toggle.className = 'section-toggle'
+    toggle.textContent = heading.textContent
+    toggle.setAttribute('aria-expanded', 'true')
+    heading.replaceWith(toggle)
+
+    toggle.addEventListener('click', () => {
+      const isCollapsed = section.classList.toggle('section-collapsed')
+      toggle.setAttribute('aria-expanded', String(!isCollapsed))
+    })
+  })
+}
+
 // Initialize controls system
 function initializeControls() {
   initializeControlsContainer()
+  setupSettingsSections()
   setupControlSliders()
   setupMobileToggle()
 }
