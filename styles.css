@@ -16,7 +16,3 @@ body {
   display: block;
   background: #050711 url('assets/bg.png') center / cover no-repeat;
 }
-
-.content {
-  display: none;
-}

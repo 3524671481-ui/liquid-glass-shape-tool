@@ -189,10 +189,6 @@ function randomizeGlassEffects() {
 
 // Function to toggle visibility of all glass buttons/containers
 function toggleButtonsVisibility() {
-  const demoLayout = document.getElementById('demo-layout')
-  if (demoLayout) {
-    demoLayout.style.display = window.glassControls.hideButtons ? 'none' : 'flex'
-  }
   if (window.primaryShapeButton?.element) {
     window.primaryShapeButton.element.style.display = window.glassControls.hideButtons ? 'none' : 'flex'
   }
