@@ -233,8 +233,9 @@ function setupSvgImport() {
     if (!file) return
 
     try {
-      const dataUrl = await readFileAsDataUrl(file)
-      updateImportedSvgButton(dataUrl)
+      const svgText = await readFileAsText(file)
+      const maskDataUrl = await rasterizeSvgToMask(svgText)
+      updateImportedSvgButton(maskDataUrl)
 
       if (status) {
         status.textContent = `已导入：${file.name}，正在使用 SVG 原始形状作为按钮遮罩。`
@@ -248,13 +249,87 @@ function setupSvgImport() {
   })
 }
 
-function readFileAsDataUrl(file) {
+function readFileAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
     reader.onerror = () => reject(new Error('无法读取 SVG 文件'))
-    reader.readAsDataURL(file)
+    reader.readAsText(file)
   })
+}
+
+function rasterizeSvgToMask(svgText) {
+  return new Promise((resolve, reject) => {
+    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+    if (doc.querySelector('parsererror') || !doc.querySelector('svg')) {
+      reject(new Error('SVG 文件格式无效'))
+      return
+    }
+
+    const svg = doc.querySelector('svg')
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+
+    const image = new Image()
+    const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' })
+    const objectUrl = URL.createObjectURL(svgBlob)
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      const canvas = document.createElement('canvas')
+      const size = 768
+      canvas.width = size
+      canvas.height = size
+
+      const ctx = canvas.getContext('2d')
+      ctx.clearRect(0, 0, size, size)
+      ctx.drawImage(image, 0, 0, size, size)
+
+      removeSolidSvgBackground(ctx, size, size)
+      resolve(canvas.toDataURL('image/png'))
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('SVG 图像无法渲染'))
+    }
+
+    image.src = objectUrl
+  })
+}
+
+function removeSolidSvgBackground(ctx, width, height) {
+  const imageData = ctx.getImageData(0, 0, width, height)
+  const data = imageData.data
+  const cornerIndexes = [0, width - 1, (height - 1) * width, height * width - 1].map(index => index * 4)
+  const corners = cornerIndexes.map(index => ({
+    r: data[index],
+    g: data[index + 1],
+    b: data[index + 2],
+    a: data[index + 3]
+  }))
+  const background = corners.find(color => color.a > 240)
+
+  if (!background) return
+
+  let matchingCorners = 0
+  corners.forEach(color => {
+    const distance =
+      Math.abs(color.r - background.r) + Math.abs(color.g - background.g) + Math.abs(color.b - background.b)
+    if (color.a > 240 && distance < 18) matchingCorners += 1
+  })
+
+  if (matchingCorners < 3) return
+
+  for (let i = 0; i < data.length; i += 4) {
+    const distance =
+      Math.abs(data[i] - background.r) + Math.abs(data[i + 1] - background.g) + Math.abs(data[i + 2] - background.b)
+    if (data[i + 3] > 240 && distance < 18) {
+      data[i + 3] = 0
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0)
 }
 
 function updateImportedSvgButton(dataUrl) {
