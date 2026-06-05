@@ -282,13 +282,17 @@ function rasterizeImageToMask(image, aspect) {
   const maxTextureSize = 768
   const canvasWidth = aspect >= 1 ? maxTextureSize : Math.round(maxTextureSize * aspect)
   const canvasHeight = aspect >= 1 ? Math.round(maxTextureSize / aspect) : maxTextureSize
-  const safeInset = Math.round(Math.min(canvasWidth, canvasHeight) * 0.08)
+  const safeScale = 0.84
+  const drawWidth = aspect >= 1 ? canvasWidth * safeScale : canvasHeight * safeScale * aspect
+  const drawHeight = aspect >= 1 ? (canvasWidth * safeScale) / aspect : canvasHeight * safeScale
+  const drawX = (canvasWidth - drawWidth) / 2
+  const drawY = (canvasHeight - drawHeight) / 2
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-  ctx.drawImage(image, safeInset, safeInset, canvasWidth - safeInset * 2, canvasHeight - safeInset * 2)
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight)
 
   removeSolidSvgBackground(ctx, canvasWidth, canvasHeight)
   encodeMaskDistanceField(ctx, canvasWidth, canvasHeight)
