@@ -1,29 +1,97 @@
-const helloRow = document.querySelector('#hello-row')
-
-const defaultCustomPath = [
-  { x: 0.25, y: 0.08 },
-  { x: 0.75, y: 0.08 },
-  { x: 0.94, y: 0.36 },
-  { x: 0.82, y: 0.88 },
-  { x: 0.22, y: 0.88 },
-  { x: 0.06, y: 0.42 }
-]
-
 window.shapeButtons = []
 
 const primaryShape = new Button({
-  type: 'custom',
+  type: 'pill',
   width: 180,
-  height: 140,
-  customPoints: defaultCustomPath,
+  height: 72,
   label: 'Imported SVG glass button',
   tintOpacity: 0.22
 })
 
 window.shapeButtons.push(primaryShape)
 window.primaryShapeButton = primaryShape
-window.customPathPoints = defaultCustomPath
-helloRow.appendChild(primaryShape.element)
+document.body.appendChild(primaryShape.element)
+setupInteractiveGlassButton(primaryShape)
+
+function setupInteractiveGlassButton(button) {
+  const element = button.element
+  const resizeHandle = document.createElement('div')
+  let dragState = null
+  let resizeState = null
+
+  element.classList.add('glass-button-interactive')
+  element.style.position = 'fixed'
+  element.style.left = '72px'
+  element.style.top = '88px'
+  element.style.zIndex = '9999'
+  element.style.touchAction = 'none'
+
+  resizeHandle.className = 'glass-resize-handle'
+  resizeHandle.setAttribute('aria-hidden', 'true')
+  element.appendChild(resizeHandle)
+
+  element.addEventListener('pointerdown', event => {
+    if (event.target === resizeHandle) return
+
+    dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: parseFloat(element.style.left),
+      top: parseFloat(element.style.top)
+    }
+
+    element.setPointerCapture(event.pointerId)
+  })
+
+  resizeHandle.addEventListener('pointerdown', event => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    resizeState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      width: button.width,
+      height: button.height,
+      aspect: button.width / button.height
+    }
+
+    resizeHandle.setPointerCapture(event.pointerId)
+  })
+
+  window.addEventListener('pointermove', event => {
+    if (dragState && event.pointerId === dragState.pointerId) {
+      const nextLeft = dragState.left + event.clientX - dragState.startX
+      const nextTop = dragState.top + event.clientY - dragState.startY
+
+      element.style.left = Math.max(0, Math.min(window.innerWidth - button.width, nextLeft)) + 'px'
+      element.style.top = Math.max(0, Math.min(window.innerHeight - button.height, nextTop)) + 'px'
+      if (button.render) button.render()
+    }
+
+    if (resizeState && event.pointerId === resizeState.pointerId) {
+      const delta = Math.max(event.clientX - resizeState.startX, event.clientY - resizeState.startY)
+      const nextWidth = Math.max(48, Math.min(420, resizeState.width + delta))
+      const nextHeight = Math.round(nextWidth / resizeState.aspect)
+
+      if (button.useMaskTexture) {
+        button.setGeometrySize(nextWidth, nextHeight, 'custom')
+      } else {
+        button.setGeometrySize(nextWidth, nextHeight, 'pill')
+      }
+    }
+  })
+
+  window.addEventListener('pointerup', event => {
+    if (dragState && event.pointerId === dragState.pointerId) {
+      dragState = null
+    }
+    if (resizeState && event.pointerId === resizeState.pointerId) {
+      resizeState = null
+    }
+  })
+}
 
 let resizeTimeout
 window.addEventListener('resize', () => {
@@ -42,7 +110,8 @@ window.addEventListener('resize', () => {
         return (
           element.classList.contains('glass-container') ||
           element.classList.contains('glass-button') ||
-          element.classList.contains('glass-button-text')
+          element.classList.contains('glass-button-text') ||
+          element.classList.contains('glass-resize-handle')
         )
       }
     })

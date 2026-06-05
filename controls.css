@@ -1,6 +1,6 @@
 /* Mobile Controls Toggle Button */
 .mobile-controls-toggle {
-  display: none; /* Hidden by default */
+  display: flex;
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -9,9 +9,11 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 25px;
+  border-radius: 50%;
 
-  padding: 12px 16px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
   font-size: 14px;
   font-weight: 500;
   color: #007aff;
@@ -22,8 +24,8 @@
 
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 
-  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
@@ -48,29 +50,17 @@
 }
 
 .mobile-controls-toggle .toggle-text {
-  font-size: 14px;
-  white-space: nowrap;
+  display: none;
 }
 
-/* Show toggle button only on mobile and adjust controls */
+/* Compact controls on mobile */
 @media (max-width: 768px) {
-  .mobile-controls-toggle {
-    display: flex !important;
-  }
-
-  /* Hide controls by default on mobile */
   .glass-controls {
-    display: none;
     top: 60px;
     right: 10px;
     bottom: 60px;
     left: 10px;
     width: auto;
-  }
-
-  /* Show controls when toggled */
-  .glass-controls.mobile-visible {
-    display: block;
   }
 
   /* Adjust controls content width on mobile */
@@ -94,6 +84,14 @@
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 14px;
   color: #333;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+.glass-controls.collapsed {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .glass-controls .glass-container {

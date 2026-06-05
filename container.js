@@ -265,7 +265,8 @@ class Container {
         return (
           element.classList.contains('glass-container') ||
           element.classList.contains('glass-button') ||
-          element.classList.contains('glass-button-text')
+          element.classList.contains('glass-button-text') ||
+          element.classList.contains('glass-resize-handle')
         )
       }
     })

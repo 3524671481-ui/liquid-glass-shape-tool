@@ -116,31 +116,6 @@ function setupControlSliders() {
     })
   }
 
-  const shapeWidth = document.getElementById('shapeWidth')
-  const shapeHeight = document.getElementById('shapeHeight')
-  const shapeWidthValue = document.getElementById('shapeWidthValue')
-  const shapeHeightValue = document.getElementById('shapeHeightValue')
-
-  function updatePrimaryShapeGeometry() {
-    if (!window.primaryShapeButton) return
-
-    const width = shapeWidth ? parseInt(shapeWidth.value) : window.primaryShapeButton.width
-    const height = shapeHeight ? parseInt(shapeHeight.value) : window.primaryShapeButton.height
-
-    if (shapeWidthValue) shapeWidthValue.textContent = width
-    if (shapeHeightValue) shapeHeightValue.textContent = height
-
-    window.primaryShapeButton.setGeometrySize(width, height, 'custom')
-  }
-
-  if (shapeWidth) {
-    shapeWidth.addEventListener('input', updatePrimaryShapeGeometry)
-  }
-
-  if (shapeHeight) {
-    shapeHeight.addEventListener('input', updatePrimaryShapeGeometry)
-  }
-
   setupSvgImport()
 
   // Set up randomize button
@@ -411,12 +386,7 @@ function removeSolidSvgBackground(ctx, width, height) {
 function updateImportedSvgButton(dataUrl) {
   if (!window.primaryShapeButton) return
 
-  const shapeWidth = document.getElementById('shapeWidth')
-  const shapeHeight = document.getElementById('shapeHeight')
-  const width = shapeWidth ? parseInt(shapeWidth.value) : window.primaryShapeButton.width
-  const height = shapeHeight ? parseInt(shapeHeight.value) : window.primaryShapeButton.height
-
-  window.primaryShapeButton.setGeometrySize(width, height, 'custom')
+  window.primaryShapeButton.setGeometrySize(window.primaryShapeButton.width, window.primaryShapeButton.height, 'custom')
   window.primaryShapeButton.setMaskImage(dataUrl)
 }
 
@@ -454,39 +424,14 @@ function setupMobileToggle() {
 
   if (toggleButton && controlsContainer) {
     toggleButton.addEventListener('click', () => {
-      const isVisible = controlsContainer.classList.contains('mobile-visible')
-
-      if (isVisible) {
-        // Hide controls
-        controlsContainer.classList.remove('mobile-visible')
-        toggleButton.classList.remove('active')
-        toggleButton.setAttribute('aria-expanded', 'false')
-      } else {
-        // Show controls
-        controlsContainer.classList.add('mobile-visible')
-        toggleButton.classList.add('active')
-        toggleButton.setAttribute('aria-expanded', 'true')
-      }
-    })
-
-    // Close controls when clicking outside on mobile
-    document.addEventListener('click', event => {
-      // Only on mobile screens
-      if (window.innerWidth <= 768) {
-        const isVisible = controlsContainer.classList.contains('mobile-visible')
-        const clickedInsideControls = controlsContainer.contains(event.target)
-        const clickedToggleButton = toggleButton.contains(event.target)
-
-        if (isVisible && !clickedInsideControls && !clickedToggleButton) {
-          controlsContainer.classList.remove('mobile-visible')
-          toggleButton.classList.remove('active')
-          toggleButton.setAttribute('aria-expanded', 'false')
-        }
-      }
+      const isCollapsed = controlsContainer.classList.toggle('collapsed')
+      toggleButton.classList.toggle('active', !isCollapsed)
+      toggleButton.setAttribute('aria-expanded', String(!isCollapsed))
     })
 
     // Initialize toggle button accessibility
-    toggleButton.setAttribute('aria-expanded', 'false')
+    toggleButton.classList.add('active')
+    toggleButton.setAttribute('aria-expanded', 'true')
   }
 }
 
